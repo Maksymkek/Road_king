@@ -5,31 +5,26 @@ import pygame
 # for general data to all classes below-------------
 
 
-class Data_for_classes:
+class DataForClasses:
     WHITE = None
-    H_of_window = 0
-    W_of_window = 0
-    Margin_window = 0
-    Green = None
-    cur_spd = 0
-    Road_left = 0
-    Road_right = 0
-    List_of_presets = {}
+    H_OF_W = 0
+    W_OF_W = 0
+    MARGIN = 0
+    GREEN = None
+    LIST_OF_PRESETS = {}
 
-    def __init__(self, HofW, WofW, Margin, R_l, R_r, list):
-        Data_for_classes.H_of_window = HofW
-        Data_for_classes.W_of_window = WofW
-        Data_for_classes.Margin_window = Margin
-        Data_for_classes.Green = (0, 255, 0)
-        Data_for_classes.List_of_presets = list
-        Data_for_classes.WHITE = (255, 255, 255)
-        Data_for_classes.Road_left = R_l
-        Data_for_classes.Road_right = R_r
+    def __init__(self, HofW, WofW, Margin, list):
+        DataForClasses.H_OF_W = HofW
+        DataForClasses.W_OF_W = WofW
+        DataForClasses.MARGIN = Margin
+        DataForClasses.GREEN = (0, 255, 0)
+        DataForClasses.LIST_OF_PRESETS = list
+        DataForClasses.WHITE = (255, 255, 255)
 
 # Class for menu buttons
 
 
-class Buttons(pygame.sprite.Sprite, Data_for_classes):
+class Buttons(pygame.sprite.Sprite, DataForClasses):
     def __init__(self, x, y, width, height, title, Menu_num, filename=None):
         pygame.sprite.Sprite.__init__(self)
         if filename is not None:
@@ -37,8 +32,9 @@ class Buttons(pygame.sprite.Sprite, Data_for_classes):
             self.image.set_colorkey((23, 21, 22))
         else:
             self.image = pygame.image.load("images/for_buttons.bmp").convert()
-        if Menu_num in Data_for_classes.List_of_presets.values():
-            self.image = pygame.image.load("images/for_buttons_pr.bmp").convert()
+        if Menu_num in DataForClasses.LIST_OF_PRESETS.values():
+            self.image = pygame.image.load(
+                "images/for_buttons_pr.bmp").convert()
         self.image.set_colorkey((23, 21, 22))
         self.image = pygame.transform.scale(self.image, (width, height))
         self.pr_img = pygame.image.load("images/for_buttons_pr.bmp").convert()
@@ -56,7 +52,7 @@ class Buttons(pygame.sprite.Sprite, Data_for_classes):
         click = pygame.mouse.get_pressed()
         if self.rect.x < mouse[0] < self.rect.right:
             if self.rect.y < mouse[1] < self.rect.bottom:
-                if click[0] == 1 and self.menu_num not in[21, 22]:
+                if click[0] == 1 and self.menu_num not in [21, 22]:
                     return True
                 else:
                     return False
@@ -79,13 +75,23 @@ class Buttons(pygame.sprite.Sprite, Data_for_classes):
 # Class for barriers on the road
 
 
-class barrier_1(pygame.sprite.Sprite, Data_for_classes):
-    def __init__(self, filename, height, width, type_of_barrier, delay_min, delay_max, existing_after_col, speed_sub,
-                 score_min, score_pl,
-                 obj_speed=0):
+class RoadBarrier(pygame.sprite.Sprite, DataForClasses):
+    def __init__(
+            self,
+            filename,
+            height,
+            width,
+            type_of_barrier,
+            delay_min,
+            delay_max,
+            existing_after_col,
+            speed_sub,
+            score_min,
+            score_pl,
+            obj_speed=0):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(filename).convert()
-        self.image.set_colorkey(Data_for_classes.Green)
+        self.image.set_colorkey(DataForClasses.GREEN)
         self.image = pygame.transform.scale(self.image, (width, height))
         self.rect = self.image.get_rect()
         self.speed_sub = speed_sub
@@ -99,9 +105,11 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
         self.delay_rnd = random.randrange(delay_min, delay_max)
         self.iterator_to_del = 0
         if type_of_barrier != "Finish":
-            self.rect.x = random.randrange(self.Margin_window + 2, self.W_of_window - self.Margin_window - self.width - 2)
+            self.rect.x = random.randrange(
+                self.MARGIN + 2,
+                self.W_OF_W - self.MARGIN - self.width - 2)
         else:
-            self.rect.x = Data_for_classes.Margin_window
+            self.rect.x = DataForClasses.MARGIN
         self.rect.y = - height - 5
         self.del_of_spawn = 0
         self.type_of_barrier = type_of_barrier
@@ -109,8 +117,8 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
         self.to_continue_exist = False
         self.existing_after_col = existing_after_col
         self.obj_speed = obj_speed
-        self.Set_barriers_position()
-        self.user_speed = 0
+        self.set_barriers_position()
+        self.cur_tr = 0
         self.cur_FPS = 0
 
     def to_spawn_obj(self):
@@ -119,7 +127,7 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
             ex_delay = 1.7
         elif self.cur_FPS == 120:
             ex_delay = 2
-        self.myevent += ((1+self.user_speed) * ex_delay)
+        self.myevent += ((1 + self.cur_tr) * ex_delay)
         if self.myevent >= self.delay_rnd:
             self.delay_rnd = random.randrange(self.delay_min, self.delay_max)
             self.myevent = 0
@@ -128,50 +136,54 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
             return False
 
     def set_spd(self, speed, cur_FPS):
-        self.user_speed = speed
+        self.cur_tr = speed
         self.cur_FPS = cur_FPS
 
 # method that sets position of every barrier
 
-    def Set_barriers_position(self):
+    def set_barriers_position(self):
         if self.type_of_barrier == "police_block":
-            self.rect.x = Data_for_classes.Margin_window + 590
+            self.rect.x = DataForClasses.MARGIN + 590
         elif self.type_of_barrier == "Wh_car_60":
             self.rect.x = random.randrange(0, 2)
             if self.rect.x == 1:
-                self.rect.x = Data_for_classes.Margin_window + 5
+                self.rect.x = DataForClasses.MARGIN + 5
             else:
-                self.rect.x = Data_for_classes.Margin_window + 435
+                self.rect.x = DataForClasses.MARGIN + 435
         elif self.type_of_barrier == "Pol_60":
             self.rect.x = random.randrange(0, 2)
             if self.rect.x == 1:
-                self.rect.x = Data_for_classes.Margin_window + 155
+                self.rect.x = DataForClasses.MARGIN + 155
             else:
-                self.rect.x = Data_for_classes.Margin_window + 500
+                self.rect.x = DataForClasses.MARGIN + 500
         elif self.type_of_barrier == "Truck_80":
             self.rect.x = random.randrange(0, 2)
             if self.rect.x == 1:
-                self.rect.x = Data_for_classes.Margin_window + 70
+                self.rect.x = DataForClasses.MARGIN + 70
             else:
-                self.rect.x = Data_for_classes.Margin_window + 285
+                self.rect.x = DataForClasses.MARGIN + 285
         elif self.type_of_barrier == "Taxi_60":
             self.rect.x = random.randrange(0, 2)
             if self.rect.x == 1:
-                self.rect.x = Data_for_classes.Margin_window + 220
+                self.rect.x = DataForClasses.MARGIN + 220
             else:
-                self.rect.x = Data_for_classes.Margin_window + 370
+                self.rect.x = DataForClasses.MARGIN + 370
 
     def fall(self, speed):
-        if self.rect.y < Data_for_classes.H_of_window:
+        if self.rect.y < DataForClasses.H_OF_W:
             self.rect.y += (speed - self.obj_speed)
         else:
             self.rect.bottom = 0
             self.fl_for_falling = False
             if self.type_of_barrier != "Finish":
-                self.rect.x = random.randrange(Data_for_classes.Margin_window+2,
-                    Data_for_classes.W_of_window - Data_for_classes.Margin_window - self.width
-                                           - 2)
-            self.Set_barriers_position()
+                self.rect.x = random.randrange(
+                    DataForClasses.MARGIN +
+                    2,
+                    DataForClasses.W_OF_W -
+                    DataForClasses.MARGIN -
+                    self.width -
+                    2)
+            self.set_barriers_position()
 
     def update(self, *args):
         if args[0] == "fall":
@@ -179,7 +191,7 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
         elif args[0] == "get_score_min":
             return self.score_min
         elif args[0] == "set_bar_pos":
-            self.Set_barriers_position()
+            self.set_barriers_position()
         elif args[0] == "wait_set_delay":
             return self.to_spawn_obj()
         elif args[0] == "set_spd_and_FPS":
@@ -213,16 +225,16 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
         elif args[0] == "get_continuing_roading":
             return self.to_continue_exist
         elif args[0] == "get_cur_spd":
-            return self.cur_spd
+            return self.cur_tr
         elif args[0] == "get_speed_sub":
             if self.speed_sub == 1:
-                if self.cur_spd > 1:
-                    return self.cur_spd - 1
+                if self.cur_tr > 1:
+                    return self.cur_tr - 1
                 else:
                     return 1
             elif self.speed_sub == 2:
-                if self.cur_spd > 2:
-                    return self.cur_spd - 2
+                if self.cur_tr > 2:
+                    return self.cur_tr - 2
                 else:
                     return 1
             elif self.speed_sub == 3:
@@ -231,13 +243,13 @@ class barrier_1(pygame.sprite.Sprite, Data_for_classes):
 # for explosion animation -------------------------
 
 
-class car_crush(pygame.sprite.Sprite, Data_for_classes):
+class car_crush(pygame.sprite.Sprite, DataForClasses):
     def __init__(self, car, car_rect):
         pygame.sprite.Sprite.__init__(self)
         self.image = car
         self.car_rect = car_rect
         self.blast = pygame.image.load("images/boom.bmp").convert()
-        self.blast.set_colorkey(Data_for_classes.Green)
+        self.blast.set_colorkey(DataForClasses.GREEN)
         self.blast = pygame.transform.scale(self.blast, (98, 152))
         self.blast_rekt = self.blast.get_rect()
 
@@ -249,12 +261,23 @@ class car_crush(pygame.sprite.Sprite, Data_for_classes):
 # Class for opponents cars
 
 
-class opponent(pygame.sprite.Sprite, Data_for_classes):
-    def __init__(self, x, y, filename, w, margin, turn_to, detect_obj, speed, perc_of_dodging, name):
+class Opponent(pygame.sprite.Sprite, DataForClasses):
+    def __init__(
+            self,
+            x,
+            y,
+            filename,
+            w,
+            margin,
+            turn_to,
+            detect_obj,
+            speed,
+            perc_of_dodging,
+            name):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(filename).convert()
         self.image = pygame.transform.scale(self.image, (60, 138))
-        self.image.set_colorkey(self.Green)
+        self.image.set_colorkey(self.GREEN)
         self.rect = self.image.get_rect()
         self.rect.y = y
         self.rect.x = x
@@ -269,7 +292,7 @@ class opponent(pygame.sprite.Sprite, Data_for_classes):
         self.tmp_speed = speed
         self.car_rot = pygame.transform.rotate(self.image, 0)
         self.detect_obj = detect_obj
-        self.Margin = margin+20
+        self.Margin = margin + 20
         self.perc_of_dodging = perc_of_dodging
         self.flag_of_dodging = 0
         self.F_ops_Slizzy = 0
@@ -287,7 +310,8 @@ class opponent(pygame.sprite.Sprite, Data_for_classes):
         elif args[0] == "Get_name":
             return self.Name
         elif args[0] == "dodging":
-            if random.randrange(1, 101) <= self.perc_of_dodging and self.flag_of_dodging == 0:
+            if random.randrange(
+                    1, 101) <= self.perc_of_dodging and self.flag_of_dodging == 0:
                 self.dodging(args[1], args[2], args[3], args[4])
             else:
                 self.flag_of_dodging = 1
@@ -334,36 +358,43 @@ class opponent(pygame.sprite.Sprite, Data_for_classes):
 
     def turn_op(self, x_br, w_br, flag):
         if flag is False:
-            sdvig = self.rect.x + 60 - x_br-1
-            sdvig = math.ceil(sdvig/self.turn_to)
-            if self.rect.x - sdvig * self.turn_to < 0+self.Margin or sdvig < 0:
+            sdvig = self.rect.x + 60 - x_br - 1
+            sdvig = math.ceil(sdvig / self.turn_to)
+            if self.rect.x - sdvig * self.turn_to < 0 + self.Margin or sdvig < 0:
                 return False
             else:
                 return True
         else:
-            sdvig = x_br+w_br - self.rect.x + 1
-            sdvig = math.ceil(sdvig/self.turn_to)
-            if self.rect.right + sdvig*self.turn_to > self.W_of_window - self.Margin:
+            sdvig = x_br + w_br - self.rect.x + 1
+            sdvig = math.ceil(sdvig / self.turn_to)
+            if self.rect.right + sdvig * self.turn_to > self.W_of_window - self.Margin:
                 return False
             else:
                 return True
 
     def dodging(self, x_br, y_br, wid_br, height):
-        if self.rect.right in range(x_br, x_br+wid_br//2) \
-            or self.rect.centerx in range(x_br, x_br+wid_br)\
-                or self.rect.right >= x_br and x_br in range(self.rect.x, self.rect.right)\
-                or self.fl_l is True and self.fl_r is False:
-            if self.rect.y - y_br - height <= self.detect_obj and y_br+height >= 0:
+        if self.rect.right in range(
+                x_br,
+                x_br +
+                wid_br //
+                2) or self.rect.centerx in range(
+                x_br,
+                x_br +
+                wid_br) or self.rect.right >= x_br and x_br in range(
+                self.rect.x,
+                self.rect.right) or self.fl_l is True and self.fl_r is False:
+            if self.rect.y - y_br - height <= self.detect_obj and y_br + height >= 0:
                 if self.turn_op(x_br, wid_br, False) is True:
                     self.rect.x -= self.turn_to
                 else:
-                    if self.rect.x < x_br+wid_br and self.rect.right <= (self.W_of_window - self.Margin)//2:
+                    if self.rect.x < x_br + \
+                            wid_br and self.rect.right <= (self.W_of_window - self.Margin) // 2:
                         self.rect.x += self.turn_to
                         self.fl_r = True
-        elif self.rect.x in range(x_br+wid_br//2, x_br+wid_br) \
-            or self.rect.x <= x_br+wid_br and x_br+wid_br in range(self.rect.x, self.rect.right)\
+        elif self.rect.x in range(x_br + wid_br // 2, x_br + wid_br) \
+            or self.rect.x <= x_br + wid_br and x_br + wid_br in range(self.rect.x, self.rect.right)\
                 or self.fl_r is True:
-            if self.rect.y - y_br - height <= self.detect_obj and y_br+height >= 0:
+            if self.rect.y - y_br - height <= self.detect_obj and y_br + height >= 0:
                 if self.turn_op(x_br, wid_br, True) is True:
                     self.rect.x += self.turn_to
                 else:
@@ -393,20 +424,11 @@ class opponent(pygame.sprite.Sprite, Data_for_classes):
             if self.Car_slizzy == 0:
                 self.F_slizzy = 4
 
-# method for alignment car to the center(In version 1.1 is not working)
-    def alignment(self, flg1, flg2, flg3):
-        if flg1 == flg2 == flg3 is False:
-            if Data_for_classes.W_of_window//2 - 20 < self.rect.centerx < Data_for_classes.W_of_window//2 + 20:
-                if self.rect.centerx < Data_for_classes.W_of_window//2:
-                    self.rect.x += self.turn_to
-                else:
-                    self.rect.x -= self.turn_to
-
 # method to catch up user car
     def catch_up_user(self):
         self.catch_user += 1
         if self.catch_user == 3000:
-            self.rect.top = self.H_of_window
+            self.rect.top = self.H_OF_W
             self.rect.x = self.W_of_window // 2
             self.catch_user = 0
 
