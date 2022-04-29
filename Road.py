@@ -261,7 +261,7 @@ class car_crush(pygame.sprite.Sprite, DataForClasses):
 # Class for opponents cars
 
 
-class Opponent(pygame.sprite.Sprite, DataForClasses):
+class Cars(pygame.sprite.Sprite, DataForClasses):
     def __init__(
             self,
             x,

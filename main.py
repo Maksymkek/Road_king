@@ -2,9 +2,10 @@ import random
 from datetime import datetime
 import os
 import pygame
-from Road import RoadBarrier, car_crush, Opponent, DataForClasses, Buttons
+from Road import RoadBarrier, car_crush, Cars, DataForClasses, Buttons
 
 pygame.init()
+VERSION = "1.1.1vB"
 H = 900  # Height of the main window
 W = 920  # Width of the main window
 MARGIN = 25  # Margin right and left in game window
@@ -33,20 +34,14 @@ barriers = pygame.sprite.Group()  # group for barriers
 opponents = pygame.sprite.Group()  # group for opponents
 # ==================== playable car initializing ======================
 # playable car_surface load
-car_sc = pygame.image.load("images/car_4.bmp").convert()
-car_sc = pygame.transform.scale(car_sc, (60, 138))
-car_rot_sc = car_sc = pygame.transform.scale(car_sc, (60, 138))
-car_sc.set_colorkey(GREEN)
-car_rect = car_sc.get_rect()
+
+
 chng_tr = {1: 5, 2: 10, 3: 14, 4: 21, 5: 28, 6: 35}  # variants of speeds
 cur_tr = 1  # current transmission
-speed = 5  # for speed
-turnto = 8  # for sensitivity
 del_trans_add = 0  # iterator for transmission(adding)
 del_trans_sub = 0  # iterator for transmission(subbing)
 angle_to_rot = 0  # angle for rotating(Slizzy animation)(Don't TOUCH!!)
 fl_for_rot = 0  # flag for rotating animation
-tempturnto = turnto  # for unblocking sensitivity on rotating method
 # ====================== game elements initializing ======================
 score = 1000  # amount of scores in game
 FPS = 60  # (recommended: 60, supports any)
@@ -59,10 +54,10 @@ finish_timer = 50000  # time from start to finish
 bFinish = RoadBarrier("images/Финишная_линия.bmp", 100, W -
                       MARGIN, "Finish", 2, 22, True, 1, 50, 0, )
 # -----------------------------------
-List_of_preset = {"FPS": FPS, "Sensetivity": turnto}
+List_of_preset = {"FPS": FPS, "Sensetivity": 8}
 data = DataForClasses(H, W, MARGIN, List_of_preset)
 # ----------- for blast animation ---------------
-Boom = car_crush(car_sc, car_rect)
+
 flForBoom = 0
 # -----------------------------------------------
 # #################################################################################
@@ -77,7 +72,7 @@ lvl = 0  # for lvl of difficult
 x_mouse = y_mouse = 0  # to save cursor position for click
 List_of_settings = {
     "FPS": [
-        60, 100, 120], "Sensetivity": [
+        60, 120], "Sensetivity": [
             6, 8, 12]}  # for settings
 # ----------------------------RGB for Menu--------------------------------
 # dict of flags to switch menu color(Text_menu_gradient())
@@ -85,6 +80,18 @@ fl_RGB_menu = {'R': 0, 'G': 0, 'B': 0}
 R_menu = 220
 G_menu = 80
 B_menu = 0
+main_ch = Cars(
+        W // 2 - 30,
+        H - H // 100 - 138,
+        "images/car_4.bmp",
+        W,
+        MARGIN,
+        8,
+        0,
+        chng_tr.get(1),
+        100,
+        "You")
+Boom = car_crush(main_ch.image, (0, -200))
 Zero_btns = pygame.sprite.Group()
 Frst_btns = pygame.sprite.Group()
 Third_btns = pygame.sprite.Group()
@@ -157,15 +164,15 @@ def set_ui_buttons():
     Frst_btns.add([Bt4, Bt5, Bt6, Bt7, Bt8])
 
     Bt9 = Buttons(75, 200, 355, 80, '       FPS', 31)
-    Bt10 = Buttons(75, 290, 100, 80, '60', 60, "images/for_settings.png")
-    Bt11 = Buttons(203, 290, 100, 80, '100', 100, "images/for_settings.png")
-    Bt12 = Buttons(330, 290, 100, 80, '120', 120, "images/for_settings.png")
+    Bt10 = Buttons(75, 290, 100, 80, str(List_of_settings.get("FPS")[0]), List_of_settings.get("FPS")[0], "images/for_settings.png")
+    Bt11 = Buttons(203, 290, 100, 80, str(List_of_settings.get("FPS")[1]), List_of_settings.get("FPS")[1], "images/for_settings.png")
+    #Bt12 = Buttons(330, 290, 100, 80, str(List_of_settings.get("FPS")[2]), List_of_settings.get("FPS")[2], "images/for_settings.png")
     Bt13 = Buttons(75, 380, 355, 80, '    Чутливість', 32)
-    Bt14 = Buttons(75, 470, 100, 80, 'Низ', 6, "images/for_settings.png")
-    Bt15 = Buttons(203, 470, 100, 80, 'Сер', 8, "images/for_settings.png")
-    Bt16 = Buttons(330, 470, 100, 80, 'Вис', 12, "images/for_settings.png")
-    Third_btns.add([Bt9, Bt10, Bt11, Bt12, Bt13, Bt14, Bt15, Bt16, Bt8])
-    FPS_btns.add(Bt10, Bt11, Bt12)
+    Bt14 = Buttons(75, 470, 100, 80, 'Низ', List_of_settings.get("Sensetivity")[0], "images/for_settings.png")
+    Bt15 = Buttons(203, 470, 100, 80, 'Сер', List_of_settings.get("Sensetivity")[1], "images/for_settings.png")
+    Bt16 = Buttons(330, 470, 100, 80, 'Вис', List_of_settings.get("Sensetivity")[2], "images/for_settings.png")
+    Third_btns.add([Bt9, Bt10, Bt11,  Bt13, Bt14, Bt15, Bt16, Bt8])
+    FPS_btns.add(Bt10, Bt11, )
     Sens_btns.add(Bt14, Bt15, Bt16)
 
     Bt18 = Buttons(75, 200, 355, 80, " Найкраща спроба", 21)
@@ -206,15 +213,13 @@ def text_menu_gradient(color, switcher):
 # ===================== Method to turn on game process ==================
 
 
-def Set_game_window(lvl_difficulty):
+def set_game_window(lvl_difficulty):
     global sc, flForBoom, for_road_anim, score,\
-        del_trans_add, del_trans_sub, angle_to_rot, fl_for_rot, cur_tr, speed, for_user_color, bg_sc, bg_rect, W,\
-        MARGIN, turnto, \
-        tempturnto, bFinish, lvl, FPS
+        del_trans_add, del_trans_sub, angle_to_rot, fl_for_rot, cur_tr, for_user_color, bg_sc, bg_rect, W,\
+        MARGIN, \
+         bFinish, lvl, FPS
     lvl = lvl_difficulty
     sc = pygame.display.set_mode((W, H))
-    car_rect.bottom = H - H // 100  # car's position height
-    car_rect.x = W // 2 - 30
     flForBoom = 0
     for_road_anim = 0
     score = 1000
@@ -224,12 +229,11 @@ def Set_game_window(lvl_difficulty):
     angle_to_rot = 0
     fl_for_rot = 0
     cur_tr = 1
-    speed = 5
     bar_start_delay = 1000
     Scorepl = Score_min = 25
+    main_ch.speed = 5
     speed_sub = 1
     obj_speed = 1
-    turnto = tempturnto
     op_det_obj = 100
     op_speed = 5
     op2_speed = 0
@@ -274,8 +278,8 @@ def Set_game_window(lvl_difficulty):
     bg_rect = bg_sc.get_rect()
     bg_rect.x = MARGIN
     bg_rect.y = 0
-    car_rect.bottom = H - H // 100
-    car_rect.x = W // 2 - 30
+    main_ch.rect.bottom = H - H // 100
+    main_ch.rect.x = W // 2 - 30
     br1 = RoadBarrier(
         "images/клякса_1.bmp",
         70,
@@ -359,9 +363,9 @@ def Set_game_window(lvl_difficulty):
         0,
     )
     barriers.add(br1, br2, br3, br4, br5, br6)
-    op_1 = Opponent(
-        car_rect.x + 90,
-        car_rect.y,
+    op_1 = Cars(
+        main_ch.rect.x + 90,
+        main_ch.rect.y,
         "images/car_5.bmp",
         W,
         MARGIN,
@@ -370,9 +374,9 @@ def Set_game_window(lvl_difficulty):
         op_speed,
         100,
         "Sophia Marthines")
-    op_2 = Opponent(
-        car_rect.x + 90,
-        car_rect.y - 200,
+    op_2 = Cars(
+        main_ch.rect.x + 90,
+        main_ch.rect.y - 200,
         "images/car_2_1.bmp",
         W,
         MARGIN,
@@ -381,9 +385,9 @@ def Set_game_window(lvl_difficulty):
         op2_speed + 6,
         100,
         "Jack Benton")
-    op_3 = Opponent(
-        car_rect.x,
-        car_rect.y - 200,
+    op_3 = Cars(
+        main_ch.rect.x,
+        main_ch.rect.y - 200,
         "images/car_2.bmp",
         W,
         MARGIN,
@@ -392,9 +396,9 @@ def Set_game_window(lvl_difficulty):
         op_speed + 10,
         100,
         "Sally Teylor")
-    op_4 = Opponent(
-        car_rect.x,
-        car_rect.y +
+    op_4 = Cars(
+        main_ch.rect.x,
+        main_ch.rect.y +
         200,
         "images/car_4.bmp",
         W,
@@ -450,16 +454,16 @@ def enter_menu():
                     Menu_stage = b1.update("get_menu_stage")
                     if b1.update("get_menu_stage") == 11:
                         Menu = False
-                        Set_game_window(1)
+                        set_game_window(1)
                     elif b1.update("get_menu_stage") == 12:
                         Menu = False
-                        Set_game_window(2)
+                        set_game_window(2)
                     elif b1.update("get_menu_stage") == 13:
                         Menu = False
-                        Set_game_window(3)
+                        set_game_window(3)
                     elif b1.update("get_menu_stage") == 14:
                         Menu = False
-                        Set_game_window(4)
+                        set_game_window(4)
         elif Menu_stage == 2:
             y_of_line = 420
             Best_Score = -1000
@@ -514,8 +518,7 @@ def enter_menu():
                         b.update("get_title"), True, (R_menu, G_menu, B_menu))
                     sc.blit(Text_b, (b.rect.x + 10, b.rect.centery - 10))
                 else:
-                    if b.update("get_menu_stage") not in [
-                            8, 6, 12, 60, 120, 100, 32, 31]:
+                    if b.update("get_menu_stage") == 0:
                         Menu_stage = b.update("get_menu_stage")
                     elif b.update("get_menu_stage") in List_of_settings.get("FPS"):
                         tmp = b.update("get_menu_stage")
@@ -530,13 +533,13 @@ def enter_menu():
                         for bf in Sens_btns:
                             if bf.update("get_menu_stage") == tmp:
                                 bf.update("set_pr_img")
-                                turnto = tmp
+                                main_ch.turn_to = tmp
                             else:
                                 bf.update("set_unpr_img")
                     pygame.mouse.set_pos([135, 70])
         Avtor = AUTHOR_FONT.render(
             "Designed by Hryshchenkov Maksym", True, (255, 12, 12))
-        Vers = VERS_FONT.render("v1.1", True, (B_menu, R_menu, G_menu))
+        Vers = VERS_FONT.render(VERSION, True, (B_menu, R_menu, G_menu))
         sc.blit(Vers, (MARGIN + 9, 710))
         sc.blit(Avtor, (260, 710))
         text = BASE_FONT.render("FPS:" + str(int(myframe.get_fps())),
@@ -561,6 +564,9 @@ def set_start_readiness():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 F_for_num = F_for_num
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                     F_for_num = -1
         sc.fill(BLACK)
         if F_for_num == 3:
             text = font_1.render("3", True, (R_start, 0, 0))
@@ -597,14 +603,6 @@ def set_start_readiness():
         sc.blit(text_1, txt_1_rect)
         pygame.display.update()
         myframe.tick(120)
-# function to set flags for rotating user car after crushing in barrier ---
-
-
-def fl_rot_car_on():
-    global angle_to_rot, fl_for_rot, turnto
-    angle_to_rot = 0
-    fl_for_rot = 1
-    turnto = 1
 # ============= to update road after transmission changes =================
 
 
@@ -622,7 +620,7 @@ def Set_list_of_places(car_pos):
 def get_list_of_places():
     list_of_coord.sort()
     for el in list_of_coord:
-        if car_rect.y != el or "You" in list_of_places:
+        if main_ch.rect.y != el or "You" in list_of_places:
             for op in opponents:
                 if op.rect.y == el:
                     list_of_places.append(op.update("Get_name"))
@@ -665,7 +663,7 @@ def print_list_of_places():
 
 def resetListsofPlaces():
     list_of_coord.clear()
-    list_of_coord.append(car_rect.y)
+    list_of_coord.append(main_ch.rect.y)
     list_of_places.clear()
 
 
@@ -795,8 +793,8 @@ while True:
             if event.key == pygame.K_SPACE:
                 set_pause()
     if finish_f <= 0:
-        bFinish.fall(speed)
-        if bFinish.rect.colliderect(car_rect):
+        bFinish.fall(main_ch.speed)
+        if bFinish.rect.colliderect(main_ch.rect):
             score *= lvl
             for op in opponents:
                 op.kill()
@@ -806,18 +804,18 @@ while True:
             get_result()
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        car_rect.x -= turnto
-        if car_rect.x < MARGIN:
-            car_rect.x = MARGIN
+        main_ch.rect.x -= main_ch.turn_to
+        if main_ch.rect.x < MARGIN:
+            main_ch.rect.x = MARGIN
     elif keys[pygame.K_RIGHT]:
-        car_rect.x += turnto
-        if car_rect.x > W - 60 - MARGIN:
-            car_rect.x = W - 60 - MARGIN
+        main_ch.rect.x += main_ch.turn_to
+        if main_ch.rect.x > W - 60 - MARGIN:
+            main_ch.rect.x = W - 60 - MARGIN
     elif keys[pygame.K_UP]:
-        if cur_tr != 6 and fl_for_rot == 0:
+        if cur_tr != 6 and main_ch.F_slizzy == 0:
             del_trans_add += 1
             if del_trans_add > FPS:
-                speed = chng_tr.get(cur_tr + 1)
+                main_ch.speed = chng_tr.get(cur_tr + 1)
                 cur_tr += 1
                 del_trans_add = 0
                 road_update()
@@ -825,7 +823,7 @@ while True:
         if cur_tr != 1:
             del_trans_sub += 1
             if del_trans_sub > FPS:
-                speed = chng_tr.get(cur_tr - 1)
+                main_ch.speed = chng_tr.get(cur_tr - 1)
                 cur_tr -= 1
                 del_trans_sub = 0
                 road_update()
@@ -834,18 +832,20 @@ while True:
     for bar in barriers:
         bar.update("set_spd_and_FPS", cur_tr, FPS)
         if bar.update("get_fl_for_falling") is True:
-            bar.update("fall", speed)
+            bar.update("fall", main_ch.speed)
             if bar.rect.bottom == 0:
                 bar.update("set_continuing_roading", True)
                 opponents.update("dodged")
                 opponents.update("change_fl_dodging")
                 score += bar.update("get_score_pl") * cur_tr
-            if bar.rect.colliderect(car_rect):
+            if bar.rect.colliderect(main_ch.rect):
                 if bar.update("get_continuing_roading") is True:
                     road_update()
                     cur_tr = bar.update("get_speed_sub")
-                    speed = chng_tr.get(cur_tr)
-                    fl_rot_car_on()
+                    main_ch.speed = chng_tr.get(cur_tr)
+                    main_ch.turn_to = 2
+                    main_ch.F_slizzy = 1
+                    main_ch.Car_slizzy = 0
                     score -= bar.update("get_score_min")
                     bar.update("set_continuing_roading", False)
                     opponents.update("dodged")
@@ -858,8 +858,10 @@ while True:
                         flForBoom = 1
                         score -= bar.update("get_score_min")
                         cur_tr = bar.update("get_speed_sub")
-                        speed = chng_tr.get(cur_tr)
-                        fl_rot_car_on()
+                        main_ch.speed = chng_tr.get(cur_tr)
+                        main_ch.turn_to = 2
+                        main_ch.F_slizzy = 1
+                        main_ch.Car_slizzy = 0
                         opponents.update("dodged")
                         bar.update("set_flag_for_fall")
 
@@ -889,33 +891,33 @@ while True:
                 bar.update("set_flag_for_fall")
     # here is a control of cars colliding
     for op in opponents:
-        if car_rect.colliderect(op.rect):
-            if op.rect.bottom - 5 < car_rect.y < op.rect.bottom + 5:
+        if main_ch.rect.colliderect(op.rect):
+            if op.rect.bottom - 5 < main_ch.rect.y < op.rect.bottom + 5:
                 if cur_tr != 1:
                     cur_tr -= 1
-                    speed = chng_tr.get(cur_tr)
+                    main_ch.speed = chng_tr.get(cur_tr)
                     road_update()
-            elif car_rect.bottom - 5 < op.rect.y < op.rect.bottom + 5:
+            elif main_ch.rect.bottom - 5 < op.rect.y < op.rect.bottom + 5:
                 op.rect.y -= 10
-            elif op.rect.x >= car_rect.x + 55:
-                if car_rect.x >= 5 + MARGIN:
-                    car_rect.x -= 5
+            elif op.rect.x >= main_ch.rect.x + 55:
+                if main_ch.rect.x >= 5 + MARGIN:
+                    main_ch.rect.x -= 5
                 if op.rect.right <= W - 5 - MARGIN:
                     op.rect.x += 5
             else:
-                if car_rect.right <= W - 5 - MARGIN:
-                    car_rect.x += 5
+                if main_ch.rect.right <= W - 5 - MARGIN:
+                    main_ch.rect.x += 5
                 if op.rect.x >= 5 + MARGIN:
                     op.rect.x -= 5
     # here is a road moving logic
-    for_road_anim += speed
-    Test1 = for_road_anim + speed - H
+    for_road_anim += main_ch.speed
+    Test1 = for_road_anim + main_ch.speed - H
     if Test1 >= H:
         Test1 = -H
         for_road_anim = 0
-    bg_rect.y = bg_rect.y + speed
+    bg_rect.y = bg_rect.y + main_ch.speed
     if bg_rect.y >= H:
-        bg_rect.bottom = 0 + speed
+        bg_rect.bottom = 0 + main_ch.speed
     # here is an opponent
 
     for op in opponents:
@@ -934,32 +936,21 @@ while True:
     sc.blit(bFinish.image, bFinish.rect)
     barriers.draw(sc)
     # here an animation of Slizzy road(car rotating)
-    if fl_for_rot == 0:
-        sc.blit(car_sc, (car_rect.x, car_rect.y))
+    if main_ch.F_slizzy == 0:
+        sc.blit(main_ch.image, main_ch.rect)
     else:
-        if fl_for_rot == 1:
-            car_rot_sc = pygame.transform.rotate(car_sc, angle_to_rot)
-            angle_to_rot += 1
-            if angle_to_rot == 70:
-                fl_for_rot = 2
-        elif fl_for_rot == 2:
-            car_rot_sc = pygame.transform.rotate(car_sc, angle_to_rot)
-            angle_to_rot -= 1
-            if angle_to_rot == -30:
-                fl_for_rot = 3
-        elif fl_for_rot == 3:
-            car_rot_sc = pygame.transform.rotate(car_sc, angle_to_rot)
-            angle_to_rot += 1
-            if angle_to_rot == 0:
-                fl_for_rot = 0
-                turnto = tempturnto
-        car_rot_sc.set_colorkey(GREEN)
-        sc.blit(car_rot_sc, car_rect)
+        main_ch.rotating()
+        if main_ch.F_slizzy == 4:
+            main_ch.F_slizzy = 0
+            main_ch.turn_to = main_ch.turn_to
+            main_ch.Car_slizzy = 0
+            main_ch.turn_to = main_ch.tmp_turnto
+        sc.blit(main_ch.car_rot, main_ch.rect)
     # here is an animation of slizzy road(car rotating) for opponents
     for op in opponents:
         if op.rect.bottom not in range(-60, H + 198):
             op.update("remember_y_of_op")
-            if speed >= op.update("check_speed"):
+            if main_ch.speed >= op.update("check_speed"):
                 if op.update("get_rem_y") < 0:
                     op.update("catch_up_opponent")
             else:
@@ -978,7 +969,7 @@ while True:
                     op.update("rotate_car")
                     sc.blit(op.update("rotating_img"), op.rect)
     resetListsofPlaces()
-    opponents.update("moving", speed)
+    opponents.update("moving", main_ch.speed)
     if 0 < flForBoom < FPS / 2:
         sc.blit(Boom.blast, Boom.blast_rekt)
         flForBoom += 1
@@ -987,7 +978,7 @@ while True:
     get_list_of_places()
     text = BASE_FONT.render("FPS:" + str(int(myframe.get_fps())),
                             True, (136, 0, 21))
-    finish_f -= speed
+    finish_f -= main_ch.speed
     print_score()
     sc.blit(text, (MARGIN, 0))
     text = MENU_FONT.render("Transmission:" + str(cur_tr),
